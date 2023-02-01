@@ -25,12 +25,21 @@ import org.bson.Document
 import java.util
 import java.util.Collections
 
-/**
- * A CosmosDB Core (SQL) API [[BoundedSource]] reading [[Document]] from a given instance.
- */
+/** A CosmosDB Core (SQL) API [[BoundedSource]] reading [[Document]] from a given instance. */
 @experimental
-private[read] class CosmosDbBoundedSource(private[read] val readCosmos: CosmosDbRead)
-    extends BoundedSource[Document] {
+private[read] class CosmosDbBoundedSource(
+  val endpoint: String,
+  val key: String,
+  val database: String,
+  val container: String,
+  val query: String
+) extends BoundedSource[Document] {
+
+  require(endpoint != null, "CosmosDB endpoint is required")
+  require(key != null, "CosmosDB key is required")
+  require(database != null, "CosmosDB database is required")
+  require(container != null, "CosmosDB container is required")
+  require(query != null, "CosmosDB query is required")
 
   /**
    * @inheritDoc
