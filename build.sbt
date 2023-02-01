@@ -190,30 +190,30 @@ lazy val itSettings = Defaults.itSettings ++ inConfig(IntegrationTest)(
 lazy val assemblySettings = Seq(
   assembly / test := {},
   assembly / assemblyMergeStrategy ~= { old =>
-    {
-      case PathList("dev", "ludovic", "netlib", "InstanceBuilder.class") =>
-        // arbitrary pick last conflicting InstanceBuilder
-        MergeStrategy.last
-      case s if s.endsWith(".proto") =>
-        // arbitrary pick last conflicting proto file
-        MergeStrategy.last
-      case PathList("git.properties") =>
-        // drop conflicting git properties
-        MergeStrategy.discard
-      case PathList("META-INF", "versions", "9", "module-info.class") =>
-        // drop conflicting module-info.class
-        MergeStrategy.discard
-      case PathList("META-INF", "gradle", "incremental.annotation.processors") =>
-        // drop conflicting kotlin compiler info
-        MergeStrategy.discard
-      case PathList("META-INF", "io.netty.versions.properties") =>
-        // merge conflicting netty property files
-        MergeStrategy.filterDistinctLines
-      case PathList("META-INF", "native-image", "native-image.properties") =>
-        // merge conflicting native-image property files
-        MergeStrategy.filterDistinctLines
-      case s => old(s)
-    }
+  {
+    case PathList("dev", "ludovic", "netlib", "InstanceBuilder.class") =>
+      // arbitrary pick last conflicting InstanceBuilder
+      MergeStrategy.last
+    case s if s.endsWith(".proto") =>
+      // arbitrary pick last conflicting proto file
+      MergeStrategy.last
+    case PathList("git.properties") =>
+      // drop conflicting git properties
+      MergeStrategy.discard
+    case PathList("META-INF", "versions", "9", "module-info.class") =>
+      // drop conflicting module-info.class
+      MergeStrategy.discard
+    case PathList("META-INF", "gradle", "incremental.annotation.processors") =>
+      // drop conflicting kotlin compiler info
+      MergeStrategy.discard
+    case PathList("META-INF", "io.netty.versions.properties") =>
+      // merge conflicting netty property files
+      MergeStrategy.filterDistinctLines
+    case PathList("META-INF", "native-image", "native-image.properties") =>
+      // merge conflicting native-image property files
+      MergeStrategy.filterDistinctLines
+    case s => old(s)
+  }
   }
 )
 
