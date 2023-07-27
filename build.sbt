@@ -41,6 +41,10 @@ val errorProneAnnotationsVersion = "2.16"
 val grpcVersion = "1.50.2"
 val protobufVersion = "3.21.9"
 
+val azureCoreVersion = "1.35.0"
+val azureDataTablesVersion = "12.3.6"
+val azureJacksonVersion = "1.2.25"
+val azureJsonXmlVersion = "1.0.0-beta.1"
 val bsonVersion = "4.8.1"
 val cosmosVersion = "4.37.1"
 val cosmosContainerVersion = "1.17.5"
@@ -323,7 +327,8 @@ lazy val root: Project = Project("scio-azure", file("."))
     assembly / aggregate := false
   )
   .aggregate(
-    `scio-cosmosdb`
+    `scio-cosmosdb`,
+    `scio-aztables`,
   )
 
 lazy val `scio-cosmosdb`: Project = project
@@ -349,6 +354,32 @@ lazy val `scio-cosmosdb`: Project = project
       "com.outr" %% "scribe-slf4j" % scribeVersion % IntegrationTest
     )
   )
+
+lazy val `scio-aztables`: Project = project
+  .in(file("scio-aztables"))
+  .configs(IntegrationTest)
+  .settings(itSettings)
+  .settings(commonSettings)
+  .settings(publishSettings)
+  .settings(
+    // scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xsource:3"), // , "-Ymacro-annotations"
+    scalacOptions ++= Seq("-Xsource:3"),
+    libraryDependencies ++= Seq(
+      "com.spotify" %% "scio-core" % "0.13.1",
+      "org.apache.beam" % "beam-sdks-java-extensions-kryo" % beamVersion,
+      "com.azure" % "azure-data-tables" % azureDataTablesVersion,
+      "com.azure" % "azure-core" % azureCoreVersion,
+      "com.azure" % "azure-core-serializer-json-jackson" % azureJacksonVersion,
+      "com.azure" % "azure-json" % azureJsonXmlVersion,
+      "com.azure" % "azure-xml" % azureJsonXmlVersion,
+      // "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonVersion,
+
+      "com.spotify" %% "scio-test" % "0.13.1" % "test;it",
+      "com.outr" %% "scribe" % scribeVersion % "it,test",
+      "com.outr" %% "scribe-slf4j" % scribeVersion % "it,test"
+    )
+  )
+
 
 lazy val site: Project = project
   .in(file("site"))
