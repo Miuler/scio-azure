@@ -40,7 +40,7 @@ final class AZTablesScioContextOps(private val sc: ScioContext) extends AnyVal {
    * @param tableName
    *   The table name, example: `[tableName]`
    * @param query
-   *   The query example: `Timestamp ge datetime'2022-12-20T00:54:00Z' and Timestamp lt datetime'2022-12-20T00:55:00Z'``
+   *   The query example: `Timestamp ge datetime'2022-12-20T00:54:00Z' and Timestamp lt datetime'2022-12-20T00:55:00Z'`
    */
   def readTableStorageWithSas(
     endpoint: String,
@@ -58,7 +58,7 @@ final class AZTablesScioContextOps(private val sc: ScioContext) extends AnyVal {
    * @param tableName
    *   The table name, example: `[tableName]`
    * @param query
-   *   The query example: `Timestamp ge datetime'2022-12-20T00:54:00Z' and Timestamp lt datetime'2022-12-20T00:55:00Z'``
+   *   The query example: `Timestamp ge datetime'2022-12-20T00:54:00Z' and Timestamp lt datetime'2022-12-20T00:55:00Z'`
    */
   def readTableStorage(
     connectionString: String,

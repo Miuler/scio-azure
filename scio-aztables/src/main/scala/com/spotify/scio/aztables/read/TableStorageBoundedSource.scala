@@ -50,10 +50,6 @@ private class TableStorageBoundedSource(
     query: String = null
   ) = this(null, null, tableName, query, connectionString)
 
-  /**
-   * @inheritDoc
-   *   TODO: You have to find a better way, maybe by partition key
-   */
   override def split(
     desiredBundleSizeBytes: Long,
     options: PipelineOptions
@@ -61,8 +57,9 @@ private class TableStorageBoundedSource(
     Collections.singletonList(this)
 
   /**
-   * @inheritDoc
-   *   The Cosmos DB Coro (SQL) API not support this metrics by the querys
+   * The Cosmos DB Core (SQL) API not support this metrics by the querys
+   *
+   * @see [[org.apache.beam.sdk.io.BoundedSource.getEstimatedSizeBytes]]
    */
   override def getEstimatedSizeBytes(options: PipelineOptions): Long = 0L
 

@@ -41,10 +41,6 @@ private[read] class CosmosDbBoundedSource(
   require(container != null, "CosmosDB container is required")
   require(query != null, "CosmosDB query is required")
 
-  /**
-   * @inheritDoc
-   *   TODO: You have to find a better way, maybe by partition key
-   */
   override def split(
     desiredBundleSizeBytes: Long,
     options: PipelineOptions
@@ -52,8 +48,8 @@ private[read] class CosmosDbBoundedSource(
     Collections.singletonList(this)
 
   /**
-   * @inheritDoc
-   *   The Cosmos DB Coro (SQL) API not support this metrics by the querys
+   * The Cosmos DB Core (SQL) API not support this metrics by the querys
+   * @see [[org.apache.beam.sdk.io.BoundedSource.getEstimatedSizeBytes]]
    */
   override def getEstimatedSizeBytes(options: PipelineOptions) = 0L
 
