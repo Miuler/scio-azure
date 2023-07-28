@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Spotify AB.
+ * Copyright 2016 Miuler
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,37 +22,19 @@ import com.github.sbt.git.SbtGit.GitKeys.gitRemoteRepo
 import org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings
 import de.heikoseeberger.sbtheader.CommentCreator
 import _root_.io.github.davidgregory084.DevMode
+import Dependencies.*
 
 ThisBuild / turbo := true
 
-val beamVendorVersion = "0.1"
-val beamVersion = "2.44.0"
 
 // check version used by beam
 // https://github.com/apache/beam/blob/v2.44.0/buildSrc/src/main/groovy/org/apache/beam/gradle/BeamModulePlugin.groovy
-val flinkVersion = "1.15.0"
-val slf4jVersion = "1.7.30"
-val sparkVersion = "3.1.2"
 // dependent versions
 
 // check versions from libraries-bom
 // https://storage.googleapis.com/cloud-opensource-java-dashboard/com.google.cloud/libraries-bom/26.1.5/index.html
 val errorProneAnnotationsVersion = "2.16"
-val grpcVersion = "1.50.2"
-val protobufVersion = "3.21.9"
 
-val azureCoreVersion = "1.35.0"
-val azureDataTablesVersion = "12.3.6"
-val azureJacksonVersion = "1.2.25"
-val azureJsonXmlVersion = "1.0.0-beta.1"
-val bsonVersion = "4.8.1"
-val cosmosVersion = "4.37.1"
-val cosmosContainerVersion = "1.17.5"
-val kantanCsvVersion = "0.7.0"
-val scalacheckVersion = "1.17.0"
-val scalaMacrosVersion = "2.1.1"
-val scribeVersion = "3.10.7"
-val testContainersVersion = "0.40.12"
 
 ThisBuild / tpolecatDefaultOptionsMode := DevMode
 ThisBuild / tpolecatDevModeOptions ~= { opts =>
@@ -130,7 +112,7 @@ val commonSettings = Def
     organization := "com.spotify",
     headerLicense := Some(HeaderLicense.ALv2(currentYear.toString, "Spotify AB")),
     headerMappings := headerMappings.value + (HeaderFileType.scala -> keepExistingHeader, HeaderFileType.java -> keepExistingHeader),
-    scalaVersion := "2.13.8",
+    scalaVersion := "2.13.11",
     crossScalaVersions := Seq("2.12.17", scalaVersion.value),
     // this setting is not derived in sbt-tpolecat
     // https://github.com/typelevel/sbt-tpolecat/issues/36
@@ -158,7 +140,7 @@ val commonSettings = Def
     scmInfo := Some(ScmInfo(url("https://github.com/Miuler/scio-azure"), "scm:git:git@github.com:Miuler/scio-azure.git")),
     developers := List(
       Developer(
-        id = "miuler",
+        id = "Miuler",
         name = "Hector Miuler Malpica Gallegos",
         email = "miuler@gmail.com",
         url = url("https://miuler.com")
@@ -168,11 +150,6 @@ val commonSettings = Def
     formatSettings,
     java17Settings
   )
-
-lazy val publishSettings = Def.settings(
-  // Release settings
-  sonatypeProfileName := "com.spotify"
-)
 
 lazy val itSettings = Defaults.itSettings ++ inConfig(IntegrationTest)(
   Def.settings(
@@ -221,12 +198,13 @@ lazy val assemblySettings = Seq(
   }
 )
 
+
 lazy val macroSettings = Def.settings(
   libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
   libraryDependencies ++= {
     VersionNumber(scalaVersion.value) match {
       case v if v.matchesSemVer(SemanticSelector("2.12.x")) =>
-        Seq(compilerPlugin(("org.scalamacros" % "paradise" % scalaMacrosVersion).cross(CrossVersion.full)))
+        Seq(compilerPlugin((`paradise`).cross(CrossVersion.full)))
       case _ => Nil
     }
   },
@@ -234,24 +212,7 @@ lazy val macroSettings = Def.settings(
   scalacOptions += "-Xmacro-settings:cache-implicit-schemas=true"
 )
 
-lazy val directRunnerDependencies = Seq("org.apache.beam" % "beam-runners-direct-java" % beamVersion % Runtime)
-lazy val dataflowRunnerDependencies = Seq(
-  "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion % Runtime
-)
 
-// only available for scala 2.12
-// scala 2.13 is supported from spark 3.2.0
-lazy val sparkRunnerDependencies = Seq(
-  "org.apache.beam" % "beam-runners-spark" % beamVersion % Runtime,
-  "org.apache.spark" %% "spark-core" % sparkVersion % Runtime,
-  "org.apache.spark" %% "spark-streaming" % sparkVersion % Runtime
-)
-
-lazy val flinkRunnerDependencies = Seq(
-  "org.apache.beam" % "beam-runners-flink-1.15" % beamVersion % Runtime,
-  "org.apache.flink" % "flink-clients" % flinkVersion % Runtime,
-  "org.apache.flink" % "flink-streaming-java" % flinkVersion % Runtime
-)
 lazy val beamRunners = settingKey[String]("beam runners")
 lazy val beamRunnersEval = settingKey[Seq[ModuleID]]("beam runners")
 
@@ -265,19 +226,19 @@ def beamRunnerSettings: Seq[Setting[_]] = Seq(
       .map(_.split(","))
       .map {
         _.flatMap {
-          case "DirectRunner"   => directRunnerDependencies
-          case "DataflowRunner" => dataflowRunnerDependencies
-          case "SparkRunner"    => sparkRunnerDependencies
-          case "FlinkRunner"    => flinkRunnerDependencies
+          case "DirectRunner"   => `beam-runners-direct`
+          case "DataflowRunner" => `beam-runners-dataflow`
+          case "SparkRunner"    => `beam-runners-spark`
+          case "FlinkRunner"    => `beam-runners-flink`
           case _                => Nil
         }.toSeq
       }
-      .getOrElse(directRunnerDependencies)
+      .getOrElse(`beam-runners-direct`)
   },
   libraryDependencies ++= beamRunnersEval.value
 )
 
-ThisBuild / PB.protocVersion := protobufVersion
+ThisBuild / PB.protocVersion := Version.protobuf
 lazy val scopedProtobufSettings = Def.settings(
   PB.targets := Seq(
     PB.gens.java -> (ThisScope.copy(config = Zero) / sourceManaged).value /
@@ -291,10 +252,7 @@ lazy val scopedProtobufSettings = Def.settings(
 )
 
 lazy val protobufSettings = Def.settings(
-  libraryDependencies ++= Seq(
-    "io.grpc" % "protoc-gen-grpc-java" % grpcVersion asProtocPlugin (),
-    "com.google.protobuf" % "protobuf-java" % protobufVersion % "protobuf"
-  )
+  libraryDependencies ++= Seq(`protoc-gen-grpc`)
 ) ++ Seq(Compile, Test).flatMap(c => inConfig(c)(scopedProtobufSettings))
 
 def splitTests(tests: Seq[TestDefinition], filter: Seq[String], forkOptions: ForkOptions) = {
@@ -336,22 +294,23 @@ lazy val `scio-cosmosdb`: Project = project
   .configs(IntegrationTest)
   .settings(itSettings)
   .settings(commonSettings)
-  .settings(publishSettings)
+  .settings(beamRunnerSettings)
   .settings(
     // scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xsource:3"), // , "-Ymacro-annotations"
     scalacOptions ++= Seq("-Xsource:3"),
     libraryDependencies ++= Seq(
-      "com.spotify" %% "scio-core" % "0.13.1",
-      "com.azure" % "azure-cosmos" % cosmosVersion,
-      "org.mongodb" % "bson" % bsonVersion,
-      "org.slf4j" % "slf4j-api" % slf4jVersion,
+      `scio-core`,
+      `azure-cosmos`,
+      `bson`,
+      `slf4j-api`,
+
       // TEST
-      "org.scalacheck" %% "scalacheck" % scalacheckVersion % "test,it",
-      "com.spotify" %% "scio-test" % "0.13.1" % "test;it",
-      "com.dimafeng" %% "testcontainers-scala-scalatest" % testContainersVersion % "it",
-      "org.testcontainers" % "azure" % cosmosContainerVersion % IntegrationTest,
-      "com.outr" %% "scribe" % scribeVersion % IntegrationTest,
-      "com.outr" %% "scribe-slf4j" % scribeVersion % IntegrationTest
+      `scio-test`,
+      `scalacheck-test`,
+      `testcontainers-scalatest-test`,
+      `testcontainers-azure-test`,
+      `scribe-test`,
+      `scribe-slf4j-test`,
     )
   )
 
@@ -360,23 +319,22 @@ lazy val `scio-aztables`: Project = project
   .configs(IntegrationTest)
   .settings(itSettings)
   .settings(commonSettings)
-  .settings(publishSettings)
+  .settings(beamRunnerSettings)
   .settings(
     // scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked", "-Xsource:3"), // , "-Ymacro-annotations"
     scalacOptions ++= Seq("-Xsource:3"),
     libraryDependencies ++= Seq(
-      "com.spotify" %% "scio-core" % "0.13.1",
-      "org.apache.beam" % "beam-sdks-java-extensions-kryo" % beamVersion,
-      "com.azure" % "azure-data-tables" % azureDataTablesVersion,
-      "com.azure" % "azure-core" % azureCoreVersion,
-      "com.azure" % "azure-core-serializer-json-jackson" % azureJacksonVersion,
-      "com.azure" % "azure-json" % azureJsonXmlVersion,
-      "com.azure" % "azure-xml" % azureJsonXmlVersion,
-      // "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonVersion,
-
-      "com.spotify" %% "scio-test" % "0.13.1" % "test;it",
-      "com.outr" %% "scribe" % scribeVersion % "it,test",
-      "com.outr" %% "scribe-slf4j" % scribeVersion % "it,test"
+      `scio-core`,
+      `beam-extensions-kryo`,
+      `azure-data-tables`,
+      `azure-core`,
+      `azure-jackson`,
+      `azure-json`,
+      `azure-xml`,
+      // TEST
+      `scio-test`,
+      `scribe-test`,
+      `scribe-slf4j-test`,
     )
   )
 
@@ -428,9 +386,6 @@ lazy val siteSettings = Def.settings(
   autoAPIMappings := true,
   gitRemoteRepo := "git@github.com:spotify/scio.git",
   libraryDependencies ++= Seq(
-    "org.apache.beam" % "beam-runners-direct-java" % beamVersion,
-    "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion,
-    "com.nrinaudo" %% "kantan.csv" % kantanCsvVersion
   ),
   // unidoc
   ScalaUnidoc / siteSubdirName := "api",
@@ -454,8 +409,8 @@ lazy val siteSettings = Def.settings(
   paradoxProperties ++= Map(
     "javadoc.com.spotify.scio.base_url" -> "http://spotify.github.com/scio/api",
     "javadoc.org.apache.beam.sdk.extensions.smb.base_url" ->
-      "https://spotify.github.io/scio/api/org/apache/beam/sdk/extensions/smb",
-    "javadoc.org.apache.beam.base_url" -> s"https://beam.apache.org/releases/javadoc/$beamVersion",
+    "https://spotify.github.io/scio/api/org/apache/beam/sdk/extensions/smb",
+    "javadoc.org.apache.beam.base_url" -> s"https://beam.apache.org/releases/javadoc/${Version.beam}",
     "scaladoc.com.spotify.scio.base_url" -> "https://spotify.github.io/scio/api",
     "github.base_url" -> "https://github.com/spotify/scio",
     "extref.example.base_url" -> "https://spotify.github.io/scio/examples/%s.scala.html"
@@ -464,9 +419,8 @@ lazy val siteSettings = Def.settings(
     .withFavicon("images/favicon.ico")
     .withColor("white", "indigo")
     .withLogo("images/logo.png")
-    .withCopyright("Copyright (C) 2020 Spotify AB")
-    .withRepository(uri("https://github.com/spotify/scio"))
-    .withSocial(uri("https://github.com/spotify"), uri("https://twitter.com/spotifyeng")),
+    .withRepository(uri("https://github.com/miuler/scio-azure"))
+    .withSocial(uri("https://github.com/miuler"), uri("https://twitter.com/Miuler")),
   // sbt-site
   addMappingsToSiteDir(ScalaUnidoc / packageDoc / mappings, ScalaUnidoc / siteSubdirName),
   makeSite / mappings ++= Seq(
@@ -479,10 +433,10 @@ lazy val soccoSettings = if (sys.env.contains("SOCCO")) {
   Seq(
     scalacOptions ++= Seq(
       "-P:socco:out:scio-examples/target/site",
-      "-P:socco:package_com.spotify.scio:https://spotify.github.io/scio/api"
+      "-P:socco:package_com.miuler.scio:https://spotify.github.io/scio/api"
     ),
     autoCompilerPlugins := true,
-    addCompilerPlugin(("io.regadas" %% "socco-ng" % "0.1.7").cross(CrossVersion.full)),
+    addCompilerPlugin((`socco-ng`).cross(CrossVersion.full)),
     // Generate scio-examples/target/site/index.html
     soccoIndex := SoccoIndex.generate(target.value / "site" / "index.html"),
     Compile / compile := {

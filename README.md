@@ -90,6 +90,6 @@ Scio includes the following artifacts:
 
 # License
 
-Copyright 2021 Spotify AB.
+Copyright 2022 Miuler.
 
 Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0

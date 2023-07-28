@@ -19,7 +19,7 @@ case class ScalaCosmosDBEmulatorContainer(
 }
 
 object ScalaCosmosDBEmulatorContainer {
-  val defaultImage = "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator"
+  val defaultImage = "mcr.microsoft.com/cosmosdb/linux/azure-cosmos-emulator:mongodb"
   val defaultTag = "latest"
   val defaultDockerImageName = s"$defaultImage:$defaultTag"
 }
