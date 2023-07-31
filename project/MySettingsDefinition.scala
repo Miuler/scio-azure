@@ -15,6 +15,7 @@ object MySettingsDefinition {
         .toSet
   )
 
+  // Example: https://maven.pkg.github.com/Miuler/scio-azure/miuler/scio-aztables_2.13/1.0.0/scio-aztables_2.13-1.0.0.jar
   lazy val github = Def.settings(
     githubOwner := "Miuler",
     githubRepository := "scio-azure",
