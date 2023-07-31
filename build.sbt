@@ -15,14 +15,15 @@
  * under the License.
  */
 
-import sbt._
-import Keys._
-import sbtassembly.AssemblyPlugin.autoImport._
+import Dependencies.*
+import sbt.*
+import Keys.*
+import sbtassembly.AssemblyPlugin.autoImport.*
 import com.github.sbt.git.SbtGit.GitKeys.gitRemoteRepo
 import org.scalafmt.sbt.ScalafmtPlugin.scalafmtConfigSettings
 import de.heikoseeberger.sbtheader.CommentCreator
 import _root_.io.github.davidgregory084.DevMode
-import Dependencies.*
+
 
 ThisBuild / turbo := true
 
@@ -70,34 +71,6 @@ Global / excludeLint := (Global / excludeLint).?.value.getOrElse(Set.empty)
 Global / excludeLint += sonatypeProfileName
 Global / excludeLint += site / Paradox / sourceManaged
 
-def previousVersion(currentVersion: String): Option[String] = {
-  val Version =
-    """(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)(?<preRelease>-.*)?(?<build>\+.*)?""".r
-  currentVersion match {
-    case Version(x, y, z, null, null) if z != "0" =>
-      // patch release
-      Some(s"$x.$y.${z.toInt - 1}")
-    case Version(x, y, z, null, _) =>
-      // post release build
-      Some(s"$x.$y.$z")
-    case Version(x, y, z, _, _) if z != "0" =>
-      // patch pre-release
-      Some(s"$x.$y.${z.toInt - 1}")
-    case _ =>
-      None
-  }
-}
-
-lazy val mimaSettings = Def.settings(
-  mimaPreviousArtifacts :=
-    previousVersion(version.value)
-      .filter(_ => publishArtifact.value)
-      .map(organization.value % s"${normalizedName.value}_${scalaBinaryVersion.value}" % _)
-      .toSet
-)
-
-lazy val formatSettings = Def.settings(scalafmtOnCompile := false, javafmtOnCompile := false)
-
 lazy val currentYear = java.time.LocalDate.now().getYear
 lazy val keepExistingHeader =
   HeaderCommentStyle.cStyleBlockComment.copy(commentCreator = new CommentCreator() {
@@ -109,12 +82,13 @@ lazy val keepExistingHeader =
 
 val commonSettings = Def
   .settings(
-    organization := "com.spotify",
+    organization := "miuler",
     headerLicense := Some(HeaderLicense.ALv2(currentYear.toString, "Spotify AB")),
     headerMappings := headerMappings.value + (HeaderFileType.scala -> keepExistingHeader, HeaderFileType.java -> keepExistingHeader),
     scalaVersion := "2.13.11",
     crossScalaVersions := Seq("2.12.17", scalaVersion.value),
-    // this setting is not derived in sbt-tpolecat
+
+// this setting is not derived in sbt-tpolecat
     // https://github.com/typelevel/sbt-tpolecat/issues/36
     inTask(doc)(TpolecatPlugin.projectSettings),
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8", "-Xlint:unchecked"),
@@ -146,9 +120,10 @@ val commonSettings = Def
         url = url("https://miuler.com")
       )
     ),
-    mimaSettings,
-    formatSettings,
-    java17Settings
+    MySettingsDefinition.github,
+    MySettingsDefinition.mimaSettings,
+    MySettingsDefinition.formatSettings,
+    MySettingsDefinition.java17Settings
   )
 
 lazy val itSettings = Defaults.itSettings ++ inConfig(IntegrationTest)(
@@ -168,34 +143,28 @@ lazy val itSettings = Defaults.itSettings ++ inConfig(IntegrationTest)(
   )
 )
 
-lazy val assemblySettings = Seq(
-  assembly / test := {},
-  assembly / assemblyMergeStrategy ~= { old =>
-  {
-    case PathList("dev", "ludovic", "netlib", "InstanceBuilder.class") =>
-      // arbitrary pick last conflicting InstanceBuilder
-      MergeStrategy.last
-    case s if s.endsWith(".proto") =>
-      // arbitrary pick last conflicting proto file
-      MergeStrategy.last
-    case PathList("git.properties") =>
-      // drop conflicting git properties
-      MergeStrategy.discard
-    case PathList("META-INF", "versions", "9", "module-info.class") =>
-      // drop conflicting module-info.class
-      MergeStrategy.discard
-    case PathList("META-INF", "gradle", "incremental.annotation.processors") =>
-      // drop conflicting kotlin compiler info
-      MergeStrategy.discard
-    case PathList("META-INF", "io.netty.versions.properties") =>
-      // merge conflicting netty property files
-      MergeStrategy.filterDistinctLines
-    case PathList("META-INF", "native-image", "native-image.properties") =>
-      // merge conflicting native-image property files
-      MergeStrategy.filterDistinctLines
-    case s => old(s)
-  }
-  }
+lazy val beamRunners = settingKey[String]("beam runners")
+lazy val beamRunnersEval = settingKey[Seq[ModuleID]]("beam runners")
+def beamRunnerSettings: Seq[Setting[_]] = Seq(
+  beamRunners := "",
+  beamRunnersEval := {
+    Option(beamRunners.value)
+      .filter(_.nonEmpty)
+      .orElse(sys.props.get("beamRunners"))
+      .orElse(sys.env.get("BEAM_RUNNERS"))
+      .map(_.split(","))
+      .map {
+        _.flatMap {
+          case "DirectRunner" => `beam-runners-direct`
+          case "DataflowRunner" => `beam-runners-dataflow`
+          case "SparkRunner" => `beam-runners-spark`
+          case "FlinkRunner" => `beam-runners-flink`
+          case _ => Nil
+        }.toSeq
+      }
+      .getOrElse(`beam-runners-direct`)
+  },
+  libraryDependencies ++= beamRunnersEval.value
 )
 
 
@@ -213,69 +182,6 @@ lazy val macroSettings = Def.settings(
 )
 
 
-lazy val beamRunners = settingKey[String]("beam runners")
-lazy val beamRunnersEval = settingKey[Seq[ModuleID]]("beam runners")
-
-def beamRunnerSettings: Seq[Setting[_]] = Seq(
-  beamRunners := "",
-  beamRunnersEval := {
-    Option(beamRunners.value)
-      .filter(_.nonEmpty)
-      .orElse(sys.props.get("beamRunners"))
-      .orElse(sys.env.get("BEAM_RUNNERS"))
-      .map(_.split(","))
-      .map {
-        _.flatMap {
-          case "DirectRunner"   => `beam-runners-direct`
-          case "DataflowRunner" => `beam-runners-dataflow`
-          case "SparkRunner"    => `beam-runners-spark`
-          case "FlinkRunner"    => `beam-runners-flink`
-          case _                => Nil
-        }.toSeq
-      }
-      .getOrElse(`beam-runners-direct`)
-  },
-  libraryDependencies ++= beamRunnersEval.value
-)
-
-ThisBuild / PB.protocVersion := Version.protobuf
-lazy val scopedProtobufSettings = Def.settings(
-  PB.targets := Seq(
-    PB.gens.java -> (ThisScope.copy(config = Zero) / sourceManaged).value /
-      "compiled_proto" /
-      configuration.value.name,
-    PB.gens.plugin("grpc-java") -> (ThisScope.copy(config = Zero) / sourceManaged).value /
-      "compiled_grpc" /
-      configuration.value.name
-  ),
-  managedSourceDirectories ++= PB.targets.value.map(_.outputPath)
-)
-
-lazy val protobufSettings = Def.settings(
-  libraryDependencies ++= Seq(`protoc-gen-grpc`)
-) ++ Seq(Compile, Test).flatMap(c => inConfig(c)(scopedProtobufSettings))
-
-def splitTests(tests: Seq[TestDefinition], filter: Seq[String], forkOptions: ForkOptions) = {
-  val (filtered, default) = tests.partition(test => filter.contains(test.name))
-  val policy = Tests.SubProcess(forkOptions)
-  new Tests.Group(name = "<default>", tests = default, runPolicy = policy) +: filtered.map { test =>
-    new Tests.Group(name = test.name, tests = Seq(test), runPolicy = policy)
-  }
-}
-
-lazy val java17Settings = sys.props("java.version") match {
-  case v if v.startsWith("17.") =>
-    Seq(
-      Test / fork := true,
-      Test / javaOptions ++= Seq(
-        "--add-opens",
-        "java.base/java.util=ALL-UNNAMED",
-        "--add-opens",
-        "java.base/java.lang.invoke=ALL-UNNAMED"
-      )
-    )
-  case _ => Seq()
-}
 
 lazy val root: Project = Project("scio-azure", file("."))
   .settings(commonSettings)
@@ -409,7 +315,7 @@ lazy val siteSettings = Def.settings(
   paradoxProperties ++= Map(
     "javadoc.com.spotify.scio.base_url" -> "http://spotify.github.com/scio/api",
     "javadoc.org.apache.beam.sdk.extensions.smb.base_url" ->
-    "https://spotify.github.io/scio/api/org/apache/beam/sdk/extensions/smb",
+      "https://spotify.github.io/scio/api/org/apache/beam/sdk/extensions/smb",
     "javadoc.org.apache.beam.base_url" -> s"https://beam.apache.org/releases/javadoc/${Version.beam}",
     "scaladoc.com.spotify.scio.base_url" -> "https://spotify.github.io/scio/api",
     "github.base_url" -> "https://github.com/spotify/scio",
@@ -429,24 +335,6 @@ lazy val siteSettings = Def.settings(
   makeSite := makeSite.dependsOn(mdoc.toTask("")).value
 )
 
-lazy val soccoSettings = if (sys.env.contains("SOCCO")) {
-  Seq(
-    scalacOptions ++= Seq(
-      "-P:socco:out:scio-examples/target/site",
-      "-P:socco:package_com.miuler.scio:https://spotify.github.io/scio/api"
-    ),
-    autoCompilerPlugins := true,
-    addCompilerPlugin((`socco-ng`).cross(CrossVersion.full)),
-    // Generate scio-examples/target/site/index.html
-    soccoIndex := SoccoIndex.generate(target.value / "site" / "index.html"),
-    Compile / compile := {
-      val _ = soccoIndex.value
-      (Compile / compile).value
-    }
-  )
-} else {
-  Nil
-}
 
 // strict should only be enabled when updating/adding dependencies
 // ThisBuild / conflictManager := ConflictManager.strict
