@@ -3,8 +3,8 @@ import com.typesafe.tools.mima.plugin.MimaKeys.*
 import org.scalafmt.sbt.ScalafmtPlugin.autoImport.scalafmtOnCompile
 import sbt.*
 import sbt.Keys.*
-import sbtghpackages.*
-import sbtghpackages.GitHubPackagesKeys.*
+//import sbtghpackages.*
+//import sbtghpackages.GitHubPackagesKeys.*
 
 object MySettingsDefinition {
   lazy val mimaSettings = Def.settings(
@@ -16,12 +16,12 @@ object MySettingsDefinition {
   )
 
   // Example: https://maven.pkg.github.com/Miuler/scio-azure/miuler/scio-aztables_2.13/1.0.0/scio-aztables_2.13-1.0.0.jar
-  lazy val github = Def.settings(
-    githubOwner := "Miuler",
-    githubRepository := "scio-azure",
-    githubTokenSource := TokenSource.Environment("GITHUB_TOKEN"),
-    publishTo := githubPublishTo.value
-  )
+  //lazy val github = Def.settings(
+  //  githubOwner := "Miuler",
+  //  githubRepository := "scio-azure",
+  //  githubTokenSource := TokenSource.Environment("GITHUB_TOKEN"),
+  //  publishTo := githubPublishTo.value
+  //)
 
   lazy val formatSettings = Def.settings(scalafmtOnCompile := false, javafmtOnCompile := false)
 

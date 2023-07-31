@@ -22,7 +22,7 @@ addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.6")
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.4.4")
 //addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.6.4")
 addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.7")
-addSbtPlugin("com.codecommit" % "sbt-github-packages" % "0.5.3")
+//addSbtPlugin("com.codecommit" % "sbt-github-packages" % "0.5.3")
 
 
 libraryDependencies += "org.apache.avro" % "avro-compiler" % "1.8.2"

@@ -85,8 +85,8 @@ val commonSettings = Def
     organization := "miuler",
     headerLicense := Some(HeaderLicense.ALv2(currentYear.toString, "Spotify AB")),
     headerMappings := headerMappings.value + (HeaderFileType.scala -> keepExistingHeader, HeaderFileType.java -> keepExistingHeader),
-    scalaVersion := "2.13.11",
-    crossScalaVersions := Seq("2.12.17", scalaVersion.value),
+    scalaVersion := "2.12.18",
+    crossScalaVersions := Seq("2.13.11", scalaVersion.value),
 
 // this setting is not derived in sbt-tpolecat
     // https://github.com/typelevel/sbt-tpolecat/issues/36
@@ -120,7 +120,7 @@ val commonSettings = Def
         url = url("https://miuler.com")
       )
     ),
-    MySettingsDefinition.github,
+    //MySettingsDefinition.github,
     MySettingsDefinition.mimaSettings,
     MySettingsDefinition.formatSettings,
     MySettingsDefinition.java17Settings
